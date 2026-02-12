@@ -5,77 +5,89 @@
 <title>AMÈRE: Bitter Origins</title>
 <style>
 body{
-  background:#0c0a0a;
-  color:#f3e6d0;
-  font-family:monospace;
-  margin:0;
-  padding:20px;
+ background:#0c0a0a;
+ color:#f3e6d0;
+ font-family:monospace;
+ padding:20px;
+ margin:0;
 }
 #game{max-width:1000px;margin:auto;}
 button{
-  background:#3b1f1f;
-  color:white;
-  border:none;
-  padding:8px 12px;
-  margin:3px;
-  cursor:pointer;
+ background:#3b1f1f;
+ color:white;
+ border:none;
+ padding:6px 10px;
+ margin:3px;
+ cursor:pointer;
 }
 button:hover{background:#7a2f2f;}
 .panel{
-  border:1px solid #5a3a3a;
-  padding:10px;
-  margin-top:10px;
+ border:1px solid #5a3a3a;
+ padding:10px;
+ margin-top:10px;
 }
 .map{
-  display:grid;
-  grid-template-columns:repeat(3,80px);
-  gap:4px;
+ display:grid;
+ grid-template-columns:repeat(3,80px);
+ gap:5px;
 }
 .tile{
-  width:80px;
-  height:80px;
-  background:#2b1b1b;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
+ width:80px;height:80px;
+ background:#2b1b1b;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
 }
 .tile:hover{background:#5a2f2f;}
 .log{
-  height:120px;
-  overflow-y:auto;
-  background:#1a1111;
-  padding:5px;
-  font-size:13px;
+ height:120px;
+ overflow-y:auto;
+ background:#1a1111;
+ padding:5px;
+ font-size:13px;
+}
+input{
+ padding:5px;
+ background:#2b1b1b;
+ color:white;
+ border:1px solid #5a3a3a;
 }
 h1{color:#d8b27c;}
 </style>
 </head>
 <body>
+
 <div id="game">
-
 <h1>🍫 AMÈRE: Bitter Origins</h1>
-
+<div id="content"></div>
 <div id="stats" class="panel"></div>
 <div id="actions" class="panel"></div>
 <div id="log" class="panel log"></div>
-
 </div>
 
 <script>
 
+let player={
+ name:"",
+ gender:""
+};
+
 let day=1;
+let energy=10;
 let gold=150;
 let reputation=60;
 let morale=70;
-let shopLevel=1;
 
 let inventory={cacao:3,sugar:3,fire:1};
 let stock={basic:0,spicy:0};
 
 let relations={
-  elena:50, // romance
-  marcus:50 // rival
+ elena:50,   // romance
+ adrian:50,  // romance
+ marcus:50,  // rival
+ lydia:50,   // investor
+ ren:50      // mysterious
 };
 
 function log(t){
@@ -84,32 +96,68 @@ function log(t){
  box.scrollTop=box.scrollHeight;
 }
 
+function createCharacter(){
+ document.getElementById("content").innerHTML=`
+ <h3>Character Creation</h3>
+ Nama: <input id="nameInput"><br><br>
+ Gender:
+ <button onclick="setGender('Male')">Male</button>
+ <button onclick="setGender('Female')">Female</button>
+ <button onclick="randomChar()">Random</button>
+ `;
+}
+
+function setGender(g){
+ player.gender=g;
+ player.name=document.getElementById("nameInput").value || "Aure";
+ startGame();
+}
+
+function randomChar(){
+ let names=["Aure","Kael","Mira","Luca","Rhea"];
+ player.name=names[Math.floor(Math.random()*names.length)];
+ player.gender=Math.random()>0.5?"Male":"Female";
+ startGame();
+}
+
+function startGame(){
+ document.getElementById("content").innerHTML=
+ `<p>${player.name}, kamu mewarisi AMÈRE.  
+ Noir Dominion mengincarmu.</p>`;
+ main();
+}
+
 function update(){
  document.getElementById("stats").innerHTML=`
- Day ${day} |
- 💰 ${gold} |
- ⭐ ${reputation} |
- 🧠 ${morale} |
- 🏪 Shop Lv.${shopLevel}<br>
- Inventory → C:${inventory.cacao} S:${inventory.sugar} F:${inventory.fire}<br>
- Stock → Basic:${stock.basic} Spicy:${stock.spicy}<br>
- ❤️ Elena:${relations.elena} ⚔ Marcus:${relations.marcus}
+ Day ${day} | ⚡ Energy ${energy}/10<br>
+ 💰 ${gold} | ⭐ ${reputation} | 🧠 ${morale}<br>
+ C:${inventory.cacao} S:${inventory.sugar} F:${inventory.fire}<br>
+ Basic:${stock.basic} Spicy:${stock.spicy}<br>
+ ❤️Elena:${relations.elena}
+ ❤️Adrian:${relations.adrian}
+ ⚔Marcus:${relations.marcus}
+ 💼Lydia:${relations.lydia}
+ 🌒Ren:${relations.ren}
  `;
+}
+
+function useEnergy(){
+ energy--;
+ if(energy<=0) nextDay();
 }
 
 function main(){
  update();
  document.getElementById("actions").innerHTML=`
- <button onclick="showMap()">🗺 Map</button>
+ <button onclick="map()">🗺 Explore</button>
  <button onclick="craft()">🍫 Craft</button>
- <button onclick="serve()">👤 Customer</button>
- <button onclick="market()">🛒 Market</button>
- <button onclick="upgradeShop()">🏪 Upgrade Shop</button>
+ <button onclick="customer()">👤 Customer</button>
+ <button onclick="interact()">💬 Interact</button>
  <button onclick="nextDay()">🌙 End Day</button>
  `;
 }
 
-function showMap(){
+function map(){
  document.getElementById("actions").innerHTML=`
  <div class="map">
  <div class="tile" onclick="explore('forest')">🌲</div>
@@ -121,125 +169,100 @@ function showMap(){
 }
 
 function explore(place){
- if(place=="forest"){
-  inventory.cacao+=2;
-  inventory.sugar+=1;
-  log("Menemukan bahan liar.");
- }
- if(place=="mountain"){
-  inventory.fire++;
-  morale-=5;
-  log("Ambil Fire Essence.");
- }
- if(place=="dock"){
-  gold+=20;
-  log("Kerja sampingan di pelabuhan.");
- }
+ if(place=="forest"){inventory.cacao+=2; inventory.sugar++; log("Bahan ditemukan.");}
+ if(place=="mountain"){inventory.fire++; morale-=3; log("Ambil Fire Essence.");}
+ if(place=="dock"){gold+=20; log("Kerja tambahan.");}
+ useEnergy();
  update();
 }
 
 function craft(){
  if(inventory.cacao>=1 && inventory.sugar>=1){
   inventory.cacao--; inventory.sugar--;
-  stock.basic++;
-  reputation+=2;
-  log("Basic dibuat.");
+  stock.basic++; reputation+=2;
  }
  if(inventory.cacao>=1 && inventory.fire>=1){
   inventory.cacao--; inventory.fire--;
-  stock.spicy++;
-  reputation+=4;
-  log("Spicy dibuat.");
+  stock.spicy++; reputation+=4;
  }
+ useEnergy();
  update();
 }
 
-function serve(){
- let r=Math.random();
- if(r<0.4){
-  if(stock.basic>0){
-   stock.basic--;
-   gold+=30;
-   relations.elena+=5;
-   log("Elena datang. Kamu ramah.");
-  }
+function customer(){
+ if(stock.basic>0){
+  stock.basic--;
+  gold+=30;
+  log("Coklat terjual.");
  }
- else if(r<0.8){
-  if(stock.spicy>0){
-   stock.spicy--;
-   gold+=50;
-   relations.marcus+=3;
-   log("Marcus memata-matai tokomu.");
-  }
- }
- else{
-  log("Tidak ada pelanggan.");
- }
+ useEnergy();
  update();
 }
 
-function market(){
+function interact(){
  document.getElementById("actions").innerHTML=`
- Beli bahan:<br>
- <button onclick="buy('cacao')">Cacao (20)</button>
- <button onclick="buy('sugar')">Sugar (15)</button>
- <button onclick="buy('fire')">Fire (35)</button>
+ Pilih karakter:<br>
+ <button onclick="talk('elena')">Elena</button>
+ <button onclick="talk('adrian')">Adrian</button>
+ <button onclick="talk('marcus')">Marcus</button>
+ <button onclick="talk('lydia')">Lydia</button>
+ <button onclick="talk('ren')">Ren</button>
  <button onclick="main()">⬅</button>
  `;
 }
 
-function buy(type){
- let price={cacao:20,sugar:15,fire:35};
- if(gold>=price[type]){
-  gold-=price[type];
-  inventory[type]++;
-  log("Membeli "+type);
+function talk(who){
+ if(who=="marcus"){
+  relations.marcus+=5;
+  reputation-=2;
+  log("Marcus menekan reputasimu.");
  }
- update();
-}
-
-function upgradeShop(){
- let cost=100*shopLevel;
- if(gold>=cost){
-  gold-=cost;
-  shopLevel++;
-  reputation+=10;
-  log("Toko diupgrade.");
+ else{
+  relations[who]+=5;
+  morale+=3;
+  log("Hubungan dengan "+who+" meningkat.");
  }
+ useEnergy();
  update();
+ main();
 }
 
 function sabotage(){
- if(Math.random()>0.7){
-  log("🕶 Noir Dominion sabotase tokomu!");
+ if(Math.random()>0.75){
   gold-=50;
   morale-=10;
+  log("🕶 Noir Dominion sabotase tokomu!");
  }
 }
 
 function nextDay(){
  day++;
+ energy=10;
  morale-=3;
  sabotage();
  checkEnd();
  update();
+ main();
 }
 
 function checkEnd(){
  if(gold<=0) end("Bangkrut.");
- if(reputation>=200) end("👑 AMÈRE Legendaris!");
- if(relations.elena>=100) end("❤️ Kamu memilih cinta.");
- if(relations.marcus>=120) end("⚔ Marcus menghancurkan reputasimu.");
+ if(reputation>=250) end("👑 Kamu Legendaris!");
+ if(relations.elena>=120) end("❤️ Ending Elena.");
+ if(relations.adrian>=120) end("❤️ Ending Adrian.");
+ if(relations.marcus>=150) end("Marcus menghancurkanmu.");
  if(morale<=0) end("Kamu menyerah.");
 }
 
 function end(msg){
  document.getElementById("actions").innerHTML="";
  document.getElementById("stats").innerHTML="";
- document.getElementById("log").innerHTML="<h2>GAME OVER</h2>"+msg+"<br><button onclick='location.reload()'>Main Lagi</button>";
+ document.getElementById("log").innerHTML=
+ "<h2>GAME OVER</h2>"+msg+
+ "<br><button onclick='location.reload()'>Main Lagi</button>";
 }
 
-main();
+createCharacter();
 
 </script>
 </body>
