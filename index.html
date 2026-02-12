@@ -5,15 +5,13 @@
 <title>AMÈRE: Bitter Origins</title>
 <style>
 body{
- background:#0c0a0a;
- color:#f3e6d0;
+ background:#0e0a0a;
+ color:#f4e4d0;
  font-family:monospace;
  padding:20px;
- margin:0;
 }
-#game{max-width:1000px;margin:auto;}
 button{
- background:#3b1f1f;
+ background:#3a1f1f;
  color:white;
  border:none;
  padding:6px 10px;
@@ -26,68 +24,40 @@ button:hover{background:#7a2f2f;}
  padding:10px;
  margin-top:10px;
 }
-.map{
- display:grid;
- grid-template-columns:repeat(3,80px);
- gap:5px;
-}
-.tile{
- width:80px;height:80px;
- background:#2b1b1b;
- display:flex;
- align-items:center;
- justify-content:center;
- cursor:pointer;
-}
-.tile:hover{background:#5a2f2f;}
 .log{
- height:120px;
+ height:140px;
  overflow-y:auto;
  background:#1a1111;
  padding:5px;
  font-size:13px;
 }
-input{
- padding:5px;
- background:#2b1b1b;
- color:white;
- border:1px solid #5a3a3a;
-}
-h1{color:#d8b27c;}
 </style>
 </head>
 <body>
 
-<div id="game">
-<h1>🍫 AMÈRE: Bitter Origins</h1>
-<div id="content"></div>
+<h1>🍫 AMÈRE: Power & Profit</h1>
+
 <div id="stats" class="panel"></div>
 <div id="actions" class="panel"></div>
 <div id="log" class="panel log"></div>
-</div>
 
 <script>
 
-let player={
- name:"",
- gender:""
-};
-
 let day=1;
 let energy=10;
-let gold=150;
-let reputation=60;
-let morale=70;
+let gold=250;
+let reputation=70;
+let morale=80;
 
-let inventory={cacao:3,sugar:3,fire:1};
+let inventory={cacao:5,sugar:5,fire:2};
 let stock={basic:0,spicy:0};
 
 let relations={
- elena:50,   // romance
- adrian:50,  // romance
- marcus:50,  // rival
- lydia:50,   // investor
- ren:50      // mysterious
+ critic:50,
+ supplier:50,
+ noir:50,
+ investor:50,
+ activist:50
 };
 
 function log(t){
@@ -96,142 +66,161 @@ function log(t){
  box.scrollTop=box.scrollHeight;
 }
 
-function createCharacter(){
- document.getElementById("content").innerHTML=`
- <h3>Character Creation</h3>
- Nama: <input id="nameInput"><br><br>
- Gender:
- <button onclick="setGender('Male')">Male</button>
- <button onclick="setGender('Female')">Female</button>
- <button onclick="randomChar()">Random</button>
- `;
-}
-
-function setGender(g){
- player.gender=g;
- player.name=document.getElementById("nameInput").value || "Aure";
- startGame();
-}
-
-function randomChar(){
- let names=["Aure","Kael","Mira","Luca","Rhea"];
- player.name=names[Math.floor(Math.random()*names.length)];
- player.gender=Math.random()>0.5?"Male":"Female";
- startGame();
-}
-
-function startGame(){
- document.getElementById("content").innerHTML=
- `<p>${player.name}, kamu mewarisi AMÈRE.  
- Noir Dominion mengincarmu.</p>`;
- main();
-}
-
 function update(){
  document.getElementById("stats").innerHTML=`
- Day ${day} | ⚡ Energy ${energy}/10<br>
+ Day ${day} | ⚡ ${energy}/10<br>
  💰 ${gold} | ⭐ ${reputation} | 🧠 ${morale}<br>
- C:${inventory.cacao} S:${inventory.sugar} F:${inventory.fire}<br>
- Basic:${stock.basic} Spicy:${stock.spicy}<br>
- ❤️Elena:${relations.elena}
- ❤️Adrian:${relations.adrian}
- ⚔Marcus:${relations.marcus}
- 💼Lydia:${relations.lydia}
- 🌒Ren:${relations.ren}
+ Stock → Basic:${stock.basic} Spicy:${stock.spicy}<br>
+ Relasi → Critic:${relations.critic} |
+ Supplier:${relations.supplier} |
+ Noir:${relations.noir} |
+ Investor:${relations.investor} |
+ Activist:${relations.activist}
  `;
 }
 
 function useEnergy(){
  energy--;
- if(energy<=0) nextDay();
+ if(energy<=0){
+   nextDay();
+ }
 }
 
 function main(){
  update();
  document.getElementById("actions").innerHTML=`
- <button onclick="map()">🗺 Explore</button>
  <button onclick="craft()">🍫 Craft</button>
- <button onclick="customer()">👤 Customer</button>
- <button onclick="interact()">💬 Interact</button>
- <button onclick="nextDay()">🌙 End Day</button>
+ <button onclick="sell()">🏪 Sell Chocolate</button>
+ <button onclick="explore()">🌲 Gather</button>
+ <button onclick="businessChoice()">⚖ Business Choice</button>
+ <button onclick="interact()">💬 Political Move</button>
  `;
-}
-
-function map(){
- document.getElementById("actions").innerHTML=`
- <div class="map">
- <div class="tile" onclick="explore('forest')">🌲</div>
- <div class="tile" onclick="explore('mountain')">🔥</div>
- <div class="tile" onclick="explore('dock')">⚓</div>
- </div>
- <button onclick="main()">⬅</button>
- `;
-}
-
-function explore(place){
- if(place=="forest"){inventory.cacao+=2; inventory.sugar++; log("Bahan ditemukan.");}
- if(place=="mountain"){inventory.fire++; morale-=3; log("Ambil Fire Essence.");}
- if(place=="dock"){gold+=20; log("Kerja tambahan.");}
- useEnergy();
- update();
 }
 
 function craft(){
  if(inventory.cacao>=1 && inventory.sugar>=1){
   inventory.cacao--; inventory.sugar--;
   stock.basic++; reputation+=2;
+  log("Basic dibuat.");
  }
  if(inventory.cacao>=1 && inventory.fire>=1){
   inventory.cacao--; inventory.fire--;
   stock.spicy++; reputation+=4;
+  log("Spicy dibuat.");
  }
- useEnergy();
- update();
+ useEnergy(); update();
 }
 
-function customer(){
+function sell(){
+ let income=0;
  if(stock.basic>0){
-  stock.basic--;
-  gold+=30;
-  log("Coklat terjual.");
+  income+=stock.basic*30;
+  stock.basic=0;
  }
- useEnergy();
- update();
+ if(stock.spicy>0){
+  income+=stock.spicy*50;
+  stock.spicy=0;
+ }
+ if(income>0){
+  gold+=income;
+  reputation+=3;
+  log("Semua stok terjual. +"+income+" gold");
+ }else{
+  log("Tidak ada stok untuk dijual.");
+ }
+ useEnergy(); update();
 }
 
-function interact(){
+function explore(){
+ inventory.cacao+=2;
+ inventory.sugar+=1;
+ if(Math.random()>0.8){
+  morale-=5;
+  log("Kelelahan saat mencari bahan.");
+ }
+ log("Bahan terkumpul.");
+ useEnergy(); update();
+}
+
+function businessChoice(){
  document.getElementById("actions").innerHTML=`
- Pilih karakter:<br>
- <button onclick="talk('elena')">Elena</button>
- <button onclick="talk('adrian')">Adrian</button>
- <button onclick="talk('marcus')">Marcus</button>
- <button onclick="talk('lydia')">Lydia</button>
- <button onclick="talk('ren')">Ren</button>
+ Pilih strategi:<br>
+ <button onclick="aggressive()">Agresif (Profit tinggi)</button>
+ <button onclick="ethical()">Etis (Reputasi naik)</button>
  <button onclick="main()">⬅</button>
  `;
 }
 
-function talk(who){
- if(who=="marcus"){
-  relations.marcus+=5;
-  reputation-=2;
-  log("Marcus menekan reputasimu.");
- }
- else{
-  relations[who]+=5;
-  morale+=3;
-  log("Hubungan dengan "+who+" meningkat.");
- }
- useEnergy();
- update();
- main();
+function aggressive(){
+ gold+=50;
+ reputation-=5;
+ relations.activist-=10;
+ relations.noir+=10;
+ log("Strategi agresif. Aktivis marah.");
+ useEnergy(); main();
 }
 
-function sabotage(){
- if(Math.random()>0.75){
+function ethical(){
+ gold-=20;
+ reputation+=10;
+ relations.activist+=10;
+ relations.noir-=5;
+ log("Strategi etis dipilih.");
+ useEnergy(); main();
+}
+
+function interact(){
+ document.getElementById("actions").innerHTML=`
+ Manuver politik:<br>
+ <button onclick="allyNoir()">Aliansi Noir</button>
+ <button onclick="exposeNoir()">Expose Noir</button>
+ <button onclick="seekInvestor()">Cari Investor</button>
+ <button onclick="main()">⬅</button>
+ `;
+}
+
+function allyNoir(){
+ relations.noir+=15;
+ reputation-=5;
+ log("Kamu mulai dekat dengan Noir.");
+ useEnergy(); main();
+}
+
+function exposeNoir(){
+ relations.noir-=20;
+ reputation+=10;
+ log("Kamu menyerang Noir di publik.");
+ useEnergy(); main();
+}
+
+function seekInvestor(){
+ if(relations.investor>60){
+  gold+=150;
+  reputation+=5;
+  log("Investor mendukungmu.");
+ }else{
+  log("Investor belum percaya.");
+ }
+ useEnergy(); main();
+}
+
+function randomEvent(){
+ let r=Math.random();
+ if(r<0.25){
   gold-=50;
-  morale-=10;
-  log("🕶 Noir Dominion sabotase tokomu!");
+  log("🕶 Sabotase misterius! -50 gold");
+ }
+ else if(r<0.5){
+  reputation+=10;
+  log("⭐ Review bagus dari Critic!");
+ }
+ else if(r<0.75){
+  inventory.cacao+=3;
+  log("Panen kakao melimpah.");
+ }
+ else{
+  morale+=10;
+  log("Festival kota meningkatkan semangat.");
  }
 }
 
@@ -239,7 +228,7 @@ function nextDay(){
  day++;
  energy=10;
  morale-=3;
- sabotage();
+ randomEvent();
  checkEnd();
  update();
  main();
@@ -247,10 +236,9 @@ function nextDay(){
 
 function checkEnd(){
  if(gold<=0) end("Bangkrut.");
- if(reputation>=250) end("👑 Kamu Legendaris!");
- if(relations.elena>=120) end("❤️ Ending Elena.");
- if(relations.adrian>=120) end("❤️ Ending Adrian.");
- if(relations.marcus>=150) end("Marcus menghancurkanmu.");
+ if(reputation>=300) end("👑 AMÈRE Menguasai Kota!");
+ if(relations.noir>=150) end("🕶 Kamu bergabung dengan Noir Dominion.");
+ if(relations.activist<=0) end("Skandal publik menghancurkanmu.");
  if(morale<=0) end("Kamu menyerah.");
 }
 
@@ -262,7 +250,7 @@ function end(msg){
  "<br><button onclick='location.reload()'>Main Lagi</button>";
 }
 
-createCharacter();
+main();
 
 </script>
 </body>
