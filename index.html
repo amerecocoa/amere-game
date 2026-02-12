@@ -1,79 +1,79 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
 <meta charset="UTF-8">
 <title>AMÈRE: Bitter Origins</title>
 <style>
 body{
-  background:#0f0b0b;
-  color:#f5e6d3;
+  background:#0e0a0a;
+  color:#f4e4d0;
   font-family:Georgia,serif;
   margin:0;
   padding:20px;
 }
-#game{
-  max-width:800px;
-  margin:auto;
-}
+#game{max-width:900px;margin:auto;}
 button{
-  background:#3b1f1f;
+  background:#3a1f1f;
   color:#fff;
   border:none;
-  padding:10px 15px;
-  margin:5px 0;
+  padding:8px 14px;
+  margin:4px;
   cursor:pointer;
 }
-button:hover{
-  background:#6a2e2e;
-}
-h1{
-  color:#d8b27c;
-}
+button:hover{background:#6a2e2e;}
 .panel{
   border:1px solid #5c3a3a;
   padding:15px;
-  margin-top:15px;
-}
-.stat{
-  margin-bottom:5px;
+  margin-top:10px;
 }
 .log{
   height:120px;
   overflow-y:auto;
   background:#1a1212;
   padding:10px;
-  font-size:14px;
+  font-size:13px;
 }
+h1{color:#d8b27c;}
+.map button{display:block;width:200px;text-align:left;}
 </style>
 </head>
 <body>
 <div id="game">
+
 <h1>🍫 AMÈRE: Bitter Origins</h1>
 
 <div id="story" class="panel"></div>
-
 <div id="stats" class="panel"></div>
-
 <div id="actions" class="panel"></div>
+<div id="log" class="panel log"></div>
 
-<div class="panel">
-<h3>📜 Log</h3>
-<div id="log" class="log"></div>
-</div>
 </div>
 
 <script>
+
 let day=1;
-let gold=100;
+let gold=120;
 let reputation=50;
-let morale=50;
+let morale=60;
+let actionsLeft=5;
+let skillPoints=0;
+
 let inventory={
   cacao:0,
   sugar:0,
-  fireEssence:0
+  fire:0
 };
 
-let gameState="intro";
+let stock={
+  basic:0,
+  spicy:0
+};
+
+let skills={
+  quality:0,
+  negotiation:0,
+  survival:0
+};
 
 function log(msg){
   document.getElementById("log").innerHTML+="<div>"+msg+"</div>";
@@ -83,134 +83,194 @@ function log(msg){
 
 function updateStats(){
   document.getElementById("stats").innerHTML=`
-  <div class="stat">📅 Day: ${day}</div>
-  <div class="stat">💰 Gold: ${gold}</div>
-  <div class="stat">⭐ Reputation: ${reputation}</div>
-  <div class="stat">🧠 Morale: ${morale}</div>
-  <div class="stat">🍫 Cacao: ${inventory.cacao} | 🍬 Sugar: ${inventory.sugar} | 🔥 Fire Essence: ${inventory.fireEssence}</div>
+  📅 Day ${day} | 🎯 Actions Left: ${actionsLeft}<br>
+  💰 Gold: ${gold} | ⭐ Reputation: ${reputation} | 🧠 Morale: ${morale}<br>
+  🍫 Cacao:${inventory.cacao} 🍬 Sugar:${inventory.sugar} 🔥 Fire:${inventory.fire}<br>
+  📦 Stock → Basic:${stock.basic} | Spicy:${stock.spicy}<br>
+  🌟 Skill Points:${skillPoints}
   `;
 }
 
 function intro(){
   document.getElementById("story").innerHTML=`
-  <p>Kamu mewarisi toko coklat kecil bernama <b>AMÈRE</b>.  
-  Toko hampir bangkrut. Kompetitor besar ingin menguasai pasar.  
-  Tapi ada legenda: resep keluarga bisa mengubah emosi manusia.</p>
-  <p>Bisakah kamu membangkitkan kembali kejayaan AMÈRE?</p>
-  <button onclick="startGame()">Mulai</button>
+  <p>Kota Valdore mulai melupakan AMÈRE.  
+  Kompetitor semakin kuat.  
+  Kamu punya 15 hari untuk membuktikan diri.</p>
+  <button onclick="mainMenu()">Mulai</button>
   `;
 }
 
-function startGame(){
-  gameState="tutorial";
-  document.getElementById("story").innerHTML=`
-  <h3>Tutorial</h3>
-  <p>Setiap hari kamu bisa:</p>
-  <ul>
-  <li>Eksplorasi untuk mencari bahan</li>
-  <li>Craft coklat</li>
-  <li>Jual di toko</li>
-  </ul>
-  <p>Hati-hati. Reputasi turun = bangkrut.  
-  Morale habis = menyerah.</p>
-  <button onclick="mainMenu()">Lanjut</button>
-  `;
+function useAction(){
+  actionsLeft--;
+  if(actionsLeft<=0){
+    endDay();
+  }
 }
 
 function mainMenu(){
-  gameState="main";
   updateStats();
   document.getElementById("actions").innerHTML=`
-  <button onclick="explore()">🌲 Eksplorasi</button>
+  <button onclick="showMap()">🗺 Eksplorasi</button>
   <button onclick="craft()">🍫 Craft</button>
-  <button onclick="sell()">🏪 Jual</button>
-  <button onclick="nextDay()">🌙 End Day</button>
+  <button onclick="serveCustomer()">👤 Layani Pelanggan</button>
+  <button onclick="showSkill()">🌳 Skill Tree</button>
   `;
 }
 
-function explore(){
-  let chance=Math.random();
-  if(chance<0.5){
-    inventory.cacao++;
-    log("Kamu menemukan biji kakao liar.");
-  }else if(chance<0.8){
-    inventory.sugar++;
-    log("Kamu menemukan gula langka.");
-  }else{
-    inventory.fireEssence++;
-    log("Kamu mendapatkan Fire Essence dari gunung.");
-  }
+function showMap(){
+  document.getElementById("actions").innerHTML=`
+  <div class="map">
+  <b>Pilih Lokasi:</b><br>
+  <button onclick="explore('forest')">🌲 Hutan Aurovine</button>
+  <button onclick="explore('mountain')">🔥 Gunung Emberfall</button>
+  <button onclick="mainMenu()">⬅ Kembali</button>
+  </div>
+  `;
+}
 
-  // event random
-  let eventChance=Math.random();
-  if(eventChance>0.85){
-    log("⚔️ Kamu diserang makhluk liar! Kehilangan morale.");
-    morale-=10;
+function explore(place){
+  if(place=="forest"){
+    inventory.cacao++;
+    inventory.sugar++;
+    log("Menemukan kakao & gula liar.");
   }
+  if(place=="mountain"){
+    inventory.fire++;
+    morale-=5;
+    log("Mendapat Fire Essence tapi melelahkan.");
+  }
+  if(Math.random()>0.8){
+    morale-=10;
+    log("⚔️ Diserang makhluk liar! Morale turun.");
+  }
+  useAction();
   updateStats();
+  mainMenu();
 }
 
 function craft(){
   if(inventory.cacao>=1 && inventory.sugar>=1){
     inventory.cacao--;
     inventory.sugar--;
-    reputation+=5;
-    log("Kamu membuat Midnight Truffle. Reputasi naik!");
-  }else if(inventory.cacao>=1 && inventory.fireEssence>=1){
-    inventory.cacao--;
-    inventory.fireEssence--;
-    reputation+=8;
-    morale+=5;
-    log("Kamu membuat Ember Kiss. Pelanggan terpukau!");
-  }else{
-    log("Bahan tidak cukup.");
+    stock.basic++;
+    reputation+=3+skills.quality;
+    log("Membuat Basic Truffle.");
   }
+  if(inventory.cacao>=1 && inventory.fire>=1){
+    inventory.cacao--;
+    inventory.fire--;
+    stock.spicy++;
+    reputation+=5+skills.quality;
+    log("Membuat Spicy Ember.");
+  }
+  useAction();
   updateStats();
+  mainMenu();
 }
 
-function sell(){
-  let income=Math.floor(Math.random()*40)+20;
-  gold+=income;
-  reputation+=2;
-  morale+=2;
-  log("Hari ini kamu mendapat "+income+" gold dari penjualan.");
-  updateStats();
+function serveCustomer(){
+  let type=Math.random();
+  document.getElementById("actions").innerHTML="";
+
+  if(type<0.5){
+    document.getElementById("actions").innerHTML=`
+    <p>Pelanggan sedih datang. Mau?</p>
+    <button onclick="sellBasic()">Jual Basic</button>
+    <button onclick="encourage()">Beri motivasi (tanpa jual)</button>
+    `;
+  }else{
+    document.getElementById("actions").innerHTML=`
+    <p>Pelanggan kaya ingin coklat pedas eksklusif.</p>
+    <button onclick="sellSpicy()">Jual Spicy</button>
+    <button onclick="raisePrice()">Naikkan harga</button>
+    `;
+  }
 }
 
-function nextDay(){
+function sellBasic(){
+  if(stock.basic>0){
+    stock.basic--;
+    gold+=25+skills.negotiation;
+    morale+=5;
+    log("Basic terjual.");
+  }else{
+    log("Stock kosong.");
+  }
+  useAction();
+  mainMenu();
+}
+
+function encourage(){
+  morale+=10;
+  reputation+=5;
+  log("Kamu membantu tanpa jual. Reputasi naik.");
+  useAction();
+  mainMenu();
+}
+
+function sellSpicy(){
+  if(stock.spicy>0){
+    stock.spicy--;
+    gold+=40+skills.negotiation;
+    reputation+=5;
+    log("Spicy terjual mahal.");
+  }else{
+    log("Stock kosong.");
+  }
+  useAction();
+  mainMenu();
+}
+
+function raisePrice(){
+  if(stock.spicy>0){
+    stock.spicy--;
+    if(Math.random()>0.5){
+      gold+=70;
+      reputation-=5;
+      log("Untung besar tapi reputasi turun.");
+    }else{
+      reputation-=15;
+      log("Pelanggan marah.");
+    }
+  }
+  useAction();
+  mainMenu();
+}
+
+function showSkill(){
+  document.getElementById("actions").innerHTML=`
+  <p>Skill Tree:</p>
+  Quality (${skills.quality}) 
+  <button onclick="upgrade('quality')">Upgrade</button><br>
+  Negotiation (${skills.negotiation}) 
+  <button onclick="upgrade('negotiation')">Upgrade</button><br>
+  Survival (${skills.survival}) 
+  <button onclick="upgrade('survival')">Upgrade</button><br>
+  <button onclick="mainMenu()">⬅</button>
+  `;
+}
+
+function upgrade(type){
+  if(skillPoints>0){
+    skills[type]++;
+    skillPoints--;
+  }
+  mainMenu();
+}
+
+function endDay(){
   day++;
+  actionsLeft=5;
   morale-=5;
 
-  // event ekonomi
-  if(Math.random()>0.8){
-    gold-=20;
-    log("📉 Harga bahan naik. Kamu rugi 20 gold.");
+  if(day%3==0){
+    skillPoints++;
+    log("Naik level! Dapat 1 Skill Point.");
   }
 
-  // boss event
-  if(day==7){
-    bossFight();
+  if(day>=15){
+    ending();
     return;
-  }
-
-  checkGameOver();
-  updateStats();
-}
-
-function bossFight(){
-  document.getElementById("actions").innerHTML="";
-  log("🔥 Kompetitor Noir Dominion menyerang reputasimu!");
-
-  let power=reputation+morale+Math.random()*50;
-
-  if(power>120){
-    log("🎉 Kamu menang! Kota mengakui AMÈRE!");
-    reputation+=20;
-    morale+=20;
-  }else{
-    log("💀 Kamu kalah. Reputasi hancur.");
-    reputation-=30;
-    morale-=20;
   }
 
   checkGameOver();
@@ -219,46 +279,24 @@ function bossFight(){
 }
 
 function checkGameOver(){
-  if(gold<=0){
-    endGame("💸 Kamu bangkrut. AMÈRE tutup selamanya.");
-  }
-  if(reputation<=0){
-    endGame("😞 Reputasi hancur. Tidak ada pelanggan yang percaya lagi.");
-  }
-  if(morale<=0){
-    endGame("🧠 Kamu kehilangan semangat dan menyerah.");
-  }
-  if(day>=15){
-    ending();
-  }
+  if(gold<=0) endGame("Bangkrut.");
+  if(reputation<=0) endGame("Reputasi hancur.");
+  if(morale<=0) endGame("Kamu menyerah.");
 }
 
 function ending(){
-  if(reputation>120){
-    endGame("👑 Kamu menjadi Chocolatier Legendaris.");
-  }else if(gold>300){
-    endGame("💰 Kamu menjadi pengusaha sukses, tapi kehilangan sentuhan seni.");
-  }else{
-    endGame("🌒 AMÈRE bertahan... tapi masa depan masih abu-abu.");
-  }
+  if(reputation>120) endGame("👑 Legendaris Chocolatier.");
+  else if(gold>400) endGame("💰 Konglomerat coklat.");
+  else endGame("AMÈRE bertahan... tapi belum bersinar.");
 }
 
-function endGame(message){
+function endGame(msg){
   document.getElementById("actions").innerHTML="";
-  document.getElementById("story").innerHTML="<h2>GAME OVER</h2><p>"+message+"</p><button onclick='restart()'>Main Lagi</button>";
-}
-
-function restart(){
-  day=1;
-  gold=100;
-  reputation=50;
-  morale=50;
-  inventory={cacao:0,sugar:0,fireEssence:0};
-  document.getElementById("log").innerHTML="";
-  intro();
+  document.getElementById("story").innerHTML="<h2>GAME OVER</h2><p>"+msg+"</p><button onclick='location.reload()'>Main Lagi</button>";
 }
 
 intro();
+
 </script>
 </body>
 </html>
