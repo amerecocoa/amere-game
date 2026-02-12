@@ -1,280 +1,264 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>AMERE Empire</title>
+<title>AMÈRE: Bitter Origins</title>
 <style>
 body{
+  background:#0f0b0b;
+  color:#f5e6d3;
+  font-family:Georgia,serif;
   margin:0;
-  font-family:Segoe UI;
-  background:#0f0704;
-  color:#f5e9dc;
-}
-.wrapper{
-  display:flex;
-  height:100vh;
-}
-.sidebar{
-  width:280px;
-  background:#1c0f0a;
   padding:20px;
-  box-shadow:2px 0 20px rgba(0,0,0,.6);
-  overflow-y:auto;
 }
-.main{
-  flex:1;
-  padding:25px;
-  overflow-y:auto;
-}
-.card{
-  background:#2a160f;
-  padding:15px;
-  border-radius:14px;
-  margin-bottom:15px;
+#game{
+  max-width:800px;
+  margin:auto;
 }
 button{
-  padding:6px 10px;
+  background:#3b1f1f;
+  color:#fff;
   border:none;
-  border-radius:8px;
-  background:#7a3e22;
-  color:white;
+  padding:10px 15px;
+  margin:5px 0;
   cursor:pointer;
-  margin:2px;
 }
-button:hover{background:#9c4f2a}
-.owner{
-  font-size:60px;
-  text-align:center;
+button:hover{
+  background:#6a2e2e;
 }
-.staffCard{
-  background:#3a2016;
-  padding:10px;
-  border-radius:10px;
-  margin-bottom:8px;
-  font-size:13px;
+h1{
+  color:#d8b27c;
 }
-.moodBar{
-  height:6px;
-  border-radius:4px;
-  margin-top:4px;
+.panel{
+  border:1px solid #5c3a3a;
+  padding:15px;
+  margin-top:15px;
+}
+.stat{
+  margin-bottom:5px;
 }
 .log{
-  background:#140a06;
-  padding:10px;
-  border-radius:10px;
-  max-height:200px;
+  height:120px;
   overflow-y:auto;
-  font-size:13px;
+  background:#1a1212;
+  padding:10px;
+  font-size:14px;
 }
-.bad{color:#ff6b6b}
-.good{color:#7CFC00}
 </style>
 </head>
 <body>
+<div id="game">
+<h1>🍫 AMÈRE: Bitter Origins</h1>
 
-<div class="wrapper">
+<div id="story" class="panel"></div>
 
-<div class="sidebar">
+<div id="stats" class="panel"></div>
 
-<div class="owner">👑</div>
-<h3>Owner AMERE</h3>
+<div id="actions" class="panel"></div>
 
-📅 Hari: <span id="day"></span><br>
-💰 Uang: Rp <span id="money"></span><br>
-⭐ Reputasi: <span id="rep"></span><br><br>
-
-<button onclick="hire('Produksi')">+ Produksi</button>
-<button onclick="hire('Cleaner')">+ Cleaner</button>
-<button onclick="hire('Security')">+ Security</button>
-
-<hr>
-
-<h3>👥 Staff</h3>
-<div id="staffList"></div>
-
-<button onclick="nextDay()">🌙 Tutup Hari</button>
-<button onclick="restart()">Restart</button>
-
-</div>
-
-<div class="main">
-
-<h2>🏬 Toko AMERE</h2>
-
-<div class="card">
-<button onclick="sell()">🛒 Jual</button>
-<button onclick="produce()">🏭 Produksi</button>
-</div>
-
-<div class="card">
-<h3>🎭 Interaksi</h3>
-<button onclick="motivate()">💬 Motivasi Semua</button>
-<button onclick="scold()">⚠ Tegur Semua</button>
-</div>
-
-<div class="card log" id="log"></div>
-
+<div class="panel">
+<h3>📜 Log</h3>
+<div id="log" class="log"></div>
 </div>
 </div>
 
 <script>
-
-const names=["Ardi","Rina","Kevin","Maya","Dimas","Luna","Fajar","Salsa","Rafi","Nadine"];
-const personalities=["Rajin","Ambisius","Sensitif","Santai","Perfeksionis","Drama","Loyal","GenZ"];
-
-function random(arr){return arr[Math.floor(Math.random()*arr.length)]}
-
-let state=JSON.parse(localStorage.getItem("amereRPG")) || {
-day:1,
-money:150000,
-rep:50,
-staff:[],
-stock:10
+let day=1;
+let gold=100;
+let reputation=50;
+let morale=50;
+let inventory={
+  cacao:0,
+  sugar:0,
+  fireEssence:0
 };
 
-function save(){localStorage.setItem("amereRPG",JSON.stringify(state));}
+let gameState="intro";
 
-function update(){
-document.getElementById("day").innerText=state.day;
-document.getElementById("money").innerText=state.money.toLocaleString();
-document.getElementById("rep").innerText=Math.floor(state.rep);
-renderStaff();
-save();
+function log(msg){
+  document.getElementById("log").innerHTML+="<div>"+msg+"</div>";
+  let box=document.getElementById("log");
+  box.scrollTop=box.scrollHeight;
 }
 
-function log(t){
-let d=document.createElement("div");
-d.innerText=t;
-document.getElementById("log").prepend(d);
+function updateStats(){
+  document.getElementById("stats").innerHTML=`
+  <div class="stat">📅 Day: ${day}</div>
+  <div class="stat">💰 Gold: ${gold}</div>
+  <div class="stat">⭐ Reputation: ${reputation}</div>
+  <div class="stat">🧠 Morale: ${morale}</div>
+  <div class="stat">🍫 Cacao: ${inventory.cacao} | 🍬 Sugar: ${inventory.sugar} | 🔥 Fire Essence: ${inventory.fireEssence}</div>
+  `;
 }
 
-function hire(role){
-let s={
-name:random(names),
-role:role,
-personality:random(personalities),
-mood:70
-};
-state.staff.push(s);
-log("👤 "+s.name+" direkrut ("+s.role+" - "+s.personality+")");
-update();
+function intro(){
+  document.getElementById("story").innerHTML=`
+  <p>Kamu mewarisi toko coklat kecil bernama <b>AMÈRE</b>.  
+  Toko hampir bangkrut. Kompetitor besar ingin menguasai pasar.  
+  Tapi ada legenda: resep keluarga bisa mengubah emosi manusia.</p>
+  <p>Bisakah kamu membangkitkan kembali kejayaan AMÈRE?</p>
+  <button onclick="startGame()">Mulai</button>
+  `;
 }
 
-function fire(i){
-log("❌ "+state.staff[i].name+" dipecat");
-state.staff.splice(i,1);
-update();
+function startGame(){
+  gameState="tutorial";
+  document.getElementById("story").innerHTML=`
+  <h3>Tutorial</h3>
+  <p>Setiap hari kamu bisa:</p>
+  <ul>
+  <li>Eksplorasi untuk mencari bahan</li>
+  <li>Craft coklat</li>
+  <li>Jual di toko</li>
+  </ul>
+  <p>Hati-hati. Reputasi turun = bangkrut.  
+  Morale habis = menyerah.</p>
+  <button onclick="mainMenu()">Lanjut</button>
+  `;
 }
 
-function renderStaff(){
-let list=document.getElementById("staffList");
-list.innerHTML="";
-state.staff.forEach((s,i)=>{
+function mainMenu(){
+  gameState="main";
+  updateStats();
+  document.getElementById("actions").innerHTML=`
+  <button onclick="explore()">🌲 Eksplorasi</button>
+  <button onclick="craft()">🍫 Craft</button>
+  <button onclick="sell()">🏪 Jual</button>
+  <button onclick="nextDay()">🌙 End Day</button>
+  `;
+}
 
-let moodColor=s.mood>70?"#7CFC00":s.mood>40?"orange":"red";
+function explore(){
+  let chance=Math.random();
+  if(chance<0.5){
+    inventory.cacao++;
+    log("Kamu menemukan biji kakao liar.");
+  }else if(chance<0.8){
+    inventory.sugar++;
+    log("Kamu menemukan gula langka.");
+  }else{
+    inventory.fireEssence++;
+    log("Kamu mendapatkan Fire Essence dari gunung.");
+  }
 
-let div=document.createElement("div");
-div.className="staffCard";
-div.innerHTML=`
-<b>${s.name}</b> (${s.role})<br>
-Personality: ${s.personality}<br>
-Mood: ${Math.floor(s.mood)}
-<div class="moodBar" style="background:${moodColor};width:${s.mood}%"></div>
-<button onclick="fire(${i})">❌</button>
-`;
-list.appendChild(div);
-});
+  // event random
+  let eventChance=Math.random();
+  if(eventChance>0.85){
+    log("⚔️ Kamu diserang makhluk liar! Kehilangan morale.");
+    morale-=10;
+  }
+  updateStats();
+}
+
+function craft(){
+  if(inventory.cacao>=1 && inventory.sugar>=1){
+    inventory.cacao--;
+    inventory.sugar--;
+    reputation+=5;
+    log("Kamu membuat Midnight Truffle. Reputasi naik!");
+  }else if(inventory.cacao>=1 && inventory.fireEssence>=1){
+    inventory.cacao--;
+    inventory.fireEssence--;
+    reputation+=8;
+    morale+=5;
+    log("Kamu membuat Ember Kiss. Pelanggan terpukau!");
+  }else{
+    log("Bahan tidak cukup.");
+  }
+  updateStats();
 }
 
 function sell(){
-if(state.stock<=0){log("❌ Stok habis");return;}
-
-let bonus=0;
-state.staff.forEach(s=>{
-if(s.role=="Cleaner" && s.mood>60) bonus+=5;
-});
-
-let income=15000+bonus*100;
-state.money+=income;
-state.rep+=2;
-state.stock--;
-
-log("🛒 Terjual +"+income.toLocaleString());
-update();
-}
-
-function produce(){
-let add=2;
-state.staff.forEach(s=>{
-if(s.role=="Produksi"){
-if(s.personality=="Rajin") add+=2;
-if(s.mood>70) add+=1;
-if(s.mood<40) add-=1;
-}
-});
-state.stock+=add;
-log("🏭 Produksi +"+add);
-update();
+  let income=Math.floor(Math.random()*40)+20;
+  gold+=income;
+  reputation+=2;
+  morale+=2;
+  log("Hari ini kamu mendapat "+income+" gold dari penjualan.");
+  updateStats();
 }
 
 function nextDay(){
+  day++;
+  morale-=5;
 
-// Salary
-let salary=state.staff.length*8000;
-state.money-=salary;
-log("💵 Gaji -"+salary.toLocaleString());
+  // event ekonomi
+  if(Math.random()>0.8){
+    gold-=20;
+    log("📉 Harga bahan naik. Kamu rugi 20 gold.");
+  }
 
-// Mood decay
-state.staff.forEach((s,i)=>{
-s.mood-=5;
+  // boss event
+  if(day==7){
+    bossFight();
+    return;
+  }
 
-if(s.personality=="Sensitif") s.mood-=3;
-if(s.personality=="GenZ" && Math.random()<0.3) s.mood+=5;
-
-if(s.mood<20){
-log("💥 "+s.name+" resign!");
-state.staff.splice(i,1);
-}
-});
-
-// Theft
-let securityCount=state.staff.filter(s=>s.role=="Security").length;
-if(Math.random()<0.3){
-let loss=30000-(securityCount*10000);
-if(loss<0)loss=0;
-state.money-=loss;
-log("🦹 Maling -"+loss.toLocaleString());
+  checkGameOver();
+  updateStats();
 }
 
-state.day++;
-update();
+function bossFight(){
+  document.getElementById("actions").innerHTML="";
+  log("🔥 Kompetitor Noir Dominion menyerang reputasimu!");
+
+  let power=reputation+morale+Math.random()*50;
+
+  if(power>120){
+    log("🎉 Kamu menang! Kota mengakui AMÈRE!");
+    reputation+=20;
+    morale+=20;
+  }else{
+    log("💀 Kamu kalah. Reputasi hancur.");
+    reputation-=30;
+    morale-=20;
+  }
+
+  checkGameOver();
+  updateStats();
+  mainMenu();
 }
 
-function motivate(){
-state.staff.forEach(s=>{
-s.mood+=10;
-});
-log("💬 Kamu memotivasi staff.");
-update();
+function checkGameOver(){
+  if(gold<=0){
+    endGame("💸 Kamu bangkrut. AMÈRE tutup selamanya.");
+  }
+  if(reputation<=0){
+    endGame("😞 Reputasi hancur. Tidak ada pelanggan yang percaya lagi.");
+  }
+  if(morale<=0){
+    endGame("🧠 Kamu kehilangan semangat dan menyerah.");
+  }
+  if(day>=15){
+    ending();
+  }
 }
 
-function scold(){
-state.staff.forEach(s=>{
-s.mood-=10;
-});
-state.rep-=3;
-log("⚠ Kamu menegur staff.");
-update();
+function ending(){
+  if(reputation>120){
+    endGame("👑 Kamu menjadi Chocolatier Legendaris.");
+  }else if(gold>300){
+    endGame("💰 Kamu menjadi pengusaha sukses, tapi kehilangan sentuhan seni.");
+  }else{
+    endGame("🌒 AMÈRE bertahan... tapi masa depan masih abu-abu.");
+  }
+}
+
+function endGame(message){
+  document.getElementById("actions").innerHTML="";
+  document.getElementById("story").innerHTML="<h2>GAME OVER</h2><p>"+message+"</p><button onclick='restart()'>Main Lagi</button>";
 }
 
 function restart(){
-localStorage.removeItem("amereRPG");
-location.reload();
+  day=1;
+  gold=100;
+  reputation=50;
+  morale=50;
+  inventory={cacao:0,sugar:0,fireEssence:0};
+  document.getElementById("log").innerHTML="";
+  intro();
 }
 
-update();
-
+intro();
 </script>
-
 </body>
 </html>
