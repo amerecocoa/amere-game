@@ -4,148 +4,61 @@
 <meta charset="UTF-8">
 <title>AMERE Chocolate Empire</title>
 <style>
-body{
-  font-family:Segoe UI;
-  background:#120906;
-  color:#f5e9dc;
-}
-.container{
-  max-width:1100px;
-  margin:30px auto;
-  background:#2a160f;
-  padding:25px;
-  border-radius:16px;
-}
-h1{text-align:center;margin-bottom:10px}
-input,select,button{
-  padding:10px;
-  border-radius:8px;
-  border:none;
-  margin-top:8px;
-}
-button{
-  background:#7a3e22;
-  color:white;
-  cursor:pointer;
-}
+body{font-family:Segoe UI;background:#120906;color:#f5e9dc;margin:0}
+.container{max-width:1200px;margin:20px auto;background:#2a160f;padding:20px;border-radius:16px}
+h1,h2,h3{margin:5px 0}
+input,select,button{padding:8px;border-radius:8px;border:none;margin-top:6px}
+button{background:#7a3e22;color:white;cursor:pointer}
 button:hover{background:#9c4f2a}
-
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-  gap:12px;
-  margin-top:15px;
-}
-
-.card{
-  background:#3a2016;
-  padding:15px;
-  border-radius:12px;
-  text-align:center;
-  cursor:pointer;
-  border:2px solid transparent;
-  transition:.2s;
-}
-.card:hover{transform:scale(1.05)}
-.card.selected{
-  border:2px solid gold;
-  box-shadow:0 0 15px gold;
-}
-
-.avatar{
-  font-size:40px;
-  margin-bottom:5px;
-}
-
-.stat{
-  background:#3a2016;
-  padding:12px;
-  border-radius:12px;
-  margin-top:15px;
-}
-
-.log{
-  background:#1d0f0a;
-  padding:10px;
-  border-radius:10px;
-  margin-top:10px;
-  max-height:200px;
-  overflow-y:auto;
-  font-size:13px;
-}
-
-.eventBox{
-  background:#4a2417;
-  padding:10px;
-  border-radius:10px;
-  margin-top:10px;
-}
-
-.gameover{
-  color:#ff6b6b;
-  text-align:center;
-  margin-top:15px;
-  font-size:20px;
-}
-
-.headerPlayer{
-  display:flex;
-  align-items:center;
-  gap:15px;
-  margin-bottom:10px;
-}
-
-.playerIcon{
-  font-size:50px;
-}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.card{background:#3a2016;padding:10px;border-radius:10px;text-align:center;cursor:pointer;border:2px solid transparent}
+.card.selected{border:2px solid gold;box-shadow:0 0 10px gold}
+.stat{background:#3a2016;padding:10px;border-radius:10px;margin-top:10px}
+.log{background:#1d0f0a;padding:10px;border-radius:10px;margin-top:10px;max-height:200px;overflow-y:auto;font-size:13px}
+.eventBox{background:#4a2417;padding:10px;border-radius:10px;margin-top:10px}
+.summary{background:#3a2016;padding:15px;border-radius:12px;margin-top:10px}
+.flex{display:flex;gap:20px}
+.sidebar{width:250px}
+.main{flex:1}
+.big{font-size:40px}
+.gameover{color:#ff6b6b;font-size:20px;text-align:center;margin-top:10px}
 </style>
 </head>
 <body>
 
 <div class="container">
 
-<!-- SETUP -->
 <div id="setup">
-
 <h1>Buat Karakter</h1>
-
 <input type="text" id="playerName" placeholder="Nama Kamu">
-
 <select id="gender">
 <option value="👨">Pria</option>
 <option value="👩">Wanita</option>
 </select>
 
-<h3>Pilih 3 Karakter</h3>
-
-<div class="grid" id="charGrid"></div>
-
+<h3>Pilih 3 Trait</h3>
+<div class="grid" id="traitGrid"></div>
 <button onclick="startGame()">Mulai Game</button>
-
 </div>
 
-<!-- GAME -->
 <div id="game" style="display:none">
 
-<div class="headerPlayer">
-<div class="playerIcon" id="playerIcon"></div>
-<div>
-<h2 id="welcome"></h2>
-</div>
+<div class="flex">
+
+<div class="sidebar">
+<h2 id="playerInfo"></h2>
+<div class="stat">
+📅 Hari: <span id="day"></span><br>
+🏬 Tier: <span id="tier"></span><br>
+💰 Uang: Rp <span id="money"></span><br>
+⭐ Reputasi: <span id="rep"></span>/100
 </div>
 
 <div class="stat">
-💰 Uang: Rp <span id="money"></span><br>
-⭐ Reputasi: <span id="rep"></span>/100<br>
 👨‍🍳 Produksi: <span id="prod"></span><br>
 🧹 Cleaner: <span id="clean"></span><br>
 🛡 Security: <span id="sec"></span>
 </div>
-
-<select id="product" onchange="changeProduct()"></select>
-
-<button onclick="sell()">Jual</button>
-<button onclick="produce()">Produksi</button>
 
 <button onclick="hire('prod')">+ Produksi</button>
 <button onclick="hire('clean')">+ Cleaner</button>
@@ -155,49 +68,57 @@ button:hover{background:#9c4f2a}
 <button onclick="fire('clean')">- Cleaner</button>
 <button onclick="fire('sec')">- Security</button>
 
-<div id="eventArea"></div>
-
 <button onclick="restart()">Restart</button>
+</div>
 
+<div class="main">
+
+<h2>Fase Siang</h2>
+
+<select id="product" onchange="changeProduct()"></select>
+<button onclick="sell()">🛒 Jual</button>
+<button onclick="produce()">🏭 Produksi</button>
+<button onclick="closeDay()">🌙 Tutup Toko</button>
+
+<div id="eventArea"></div>
 <div class="log" id="log"></div>
+
+<div id="summaryArea"></div>
+
 <div class="gameover" id="gameover"></div>
 
 </div>
 
 </div>
+</div>
+</div>
 
 <script>
 
 const traits={
-visioner:{emoji:"👑",desc:"+10% Harga"},
-hemat:{emoji:"💰",desc:"Produksi -20%"},
-keamanan:{emoji:"🛡",desc:"Maling -50%"},
-marketing:{emoji:"📣",desc:"Kadang 2x"},
-negosiator:{emoji:"🤝",desc:"Upgrade murah"},
-lucky:{emoji:"🍀",desc:"Event jarang"},
-premium:{emoji:"✨",desc:"Reputasi cepat naik"},
-perfeksionis:{emoji:"🎯",desc:"Produk gagal jarang"},
-supplier:{emoji:"📦",desc:"Bahan jelek jarang"},
-efisien:{emoji:"⚙",desc:"+2 stok"}
+visioner:"👑 Harga +10%",
+hemat:"💰 Produksi -20%",
+keamanan:"🛡 Maling -50%",
+marketing:"📣 Kadang 2x jual",
+lucky:"🍀 Event jarang",
+premium:"✨ Reputasi naik cepat"
 };
 
 let selected=[];
-let state=JSON.parse(localStorage.getItem("amereUltimate"));
+let state=JSON.parse(localStorage.getItem("amereFinal"));
 
-const grid=document.getElementById("charGrid");
-
-for(let key in traits){
+const grid=document.getElementById("traitGrid");
+for(let k in traits){
 let c=document.createElement("div");
 c.className="card";
-c.innerHTML=`<div class="avatar">${traits[key].emoji}</div>
-<b>${key}</b><br><small>${traits[key].desc}</small>`;
+c.innerHTML=k+"<br>"+traits[k];
 c.onclick=()=>{
-if(selected.includes(key)){
-selected=selected.filter(x=>x!==key);
+if(selected.includes(k)){
+selected=selected.filter(x=>x!==k);
 c.classList.remove("selected");
 }else{
-if(selected.length>=3){alert("Maksimal 3 karakter!");return;}
-selected.push(key);
+if(selected.length>=3){alert("Pilih 3 trait!");return;}
+selected.push(k);
 c.classList.add("selected");
 }
 };
@@ -207,54 +128,57 @@ grid.appendChild(c);
 function startGame(){
 let name=document.getElementById("playerName").value;
 let gender=document.getElementById("gender").value;
-if(!name||selected.length!==3){alert("Isi nama & pilih 3!");return;}
+if(!name||selected.length!==3){alert("Lengkapi setup!");return;}
 
 state={
 name,gender,
-money:120000,
+day:1,
+tier:1,
+money:150000,
 rep:50,
+target:60000,
+incomeToday:0,
+expenseToday:0,
 workers:{prod:1,clean:0,sec:0},
 traits:selected,
 current:"dark",
+investor:null,
 products:{
 dark:{name:"Dark",stock:5,price:12000},
 milk:{name:"Milk",stock:6,price:10000},
 truffle:{name:"Truffle",stock:3,price:18000}
-},
-gameOver:false
+}
 };
 
-localStorage.setItem("amereUltimate",JSON.stringify(state));
+localStorage.setItem("amereFinal",JSON.stringify(state));
 location.reload();
 }
 
 if(state){
 document.getElementById("setup").style.display="none";
 document.getElementById("game").style.display="block";
-document.getElementById("welcome").innerText=
-state.name+" — Owner AMERE";
-document.getElementById("playerIcon").innerText=state.gender;
-
-const select=document.getElementById("product");
+document.getElementById("playerInfo").innerHTML=
+state.gender+" "+state.name+"<br><small>Owner AMERE</small>";
+const sel=document.getElementById("product");
 for(let k in state.products){
 let o=document.createElement("option");
 o.value=k;o.text=state.products[k].name;
-select.appendChild(o);
+sel.appendChild(o);
 }
 }
 
-function save(){localStorage.setItem("amereUltimate",JSON.stringify(state));}
+function save(){localStorage.setItem("amereFinal",JSON.stringify(state));}
 function has(t){return state.traits.includes(t);}
 
 function update(){
+document.getElementById("day").innerText=state.day;
+document.getElementById("tier").innerText=state.tier;
 document.getElementById("money").innerText=state.money.toLocaleString();
 document.getElementById("rep").innerText=Math.floor(state.rep);
 document.getElementById("prod").innerText=state.workers.prod;
 document.getElementById("clean").innerText=state.workers.clean;
 document.getElementById("sec").innerText=state.workers.sec;
-
-if(state.money<=0&&!state.gameOver){
-state.gameOver=true;
+if(state.money<=0){
 document.getElementById("gameover").innerText="💀 BANGKRUT";
 }
 save();
@@ -266,113 +190,148 @@ d.innerText=t;
 document.getElementById("log").prepend(d);
 }
 
-function changeProduct(){
-state.current=document.getElementById("product").value;
-update();
-}
-
-function paySalary(){
-let total=(state.workers.prod*8000)+(state.workers.clean*5000)+(state.workers.sec*7000);
-state.money-=total;
-log("💵 Gaji (-"+total.toLocaleString()+")");
-}
+function changeProduct(){state.current=document.getElementById("product").value;}
 
 function sell(){
-if(state.gameOver)return;
 let p=state.products[state.current];
 if(p.stock<=0){log("❌ Stok habis");return;}
 
 let chance=0.6+(state.rep/200)+(state.workers.clean*0.02);
 if(Math.random()>chance){
-state.rep-=5;
+state.rep-=3;
 log("⚠️ Gagal jual");
-update();return;
+return;
 }
 
 p.stock--;
-let income=p.price+(state.rep*15);
+let income=p.price+(state.rep*10);
 if(has("visioner"))income*=1.1;
 if(has("marketing")&&Math.random()<0.2)income*=2;
 
-state.money+=Math.floor(income);
-state.rep+= has("premium")?4:2;
+income=Math.floor(income);
+state.money+=income;
+state.incomeToday+=income;
+state.rep+= has("premium")?3:2;
 
-log("✅ Terjual (+"+Math.floor(income).toLocaleString()+")");
-
-paySalary();
-randomEvent();
-update();
+log("🛒 Terjual +"+income.toLocaleString());
 }
 
 function produce(){
-let cost=25000;
+let cost=30000;
 if(has("hemat"))cost*=0.8;
 if(state.money<cost){log("❌ Uang kurang");return;}
-
 state.money-=cost;
-let add=4+(state.workers.prod*2);
-if(has("efisien"))add+=2;
+state.expenseToday+=cost;
+let add=5+(state.workers.prod*2);
 state.products[state.current].stock+=add;
-
-log("🏭 Produksi +" + add);
-paySalary();
-randomEvent();
-update();
+log("🏭 Produksi +"+add);
 }
 
-function hire(type){state.workers[type]++;update();}
-function fire(type){if(state.workers[type]>0)state.workers[type]--;update();}
+function hire(t){state.workers[t]++;}
+function fire(t){if(state.workers[t]>0)state.workers[t]--;}
 
-function randomEvent(){
+function closeDay(){
+
+let salary=(state.workers.prod*8000)+(state.workers.clean*5000)+(state.workers.sec*7000);
+state.money-=salary;
+state.expenseToday+=salary;
+
+let theft=0;
 if(Math.random()<0.2){
-let loss=Math.floor(Math.random()*50000)+20000;
-loss-=state.workers.sec*6000;
-if(loss<0)loss=0;
-state.money-=loss;
-state.rep-=10;
-log("🦹 Maling (-"+loss.toLocaleString()+")");
+theft=Math.floor(Math.random()*50000)+20000;
+theft-=state.workers.sec*6000;
+if(has("keamanan"))theft*=0.5;
+if(theft<0)theft=0;
+state.money-=theft;
+state.expenseToday+=theft;
 }
+
+if(state.incomeToday>=state.target){
+state.rep+=5;
+}else{
+state.rep-=3;
+}
+
+if(state.day==14){state.rep+=10;log("❤️ Valentine Boost!");}
+if(state.day==30){state.rep+=15;log("🎉 Festival Coklat!");}
+
+let summary=`
+📅 Hari ${state.day} Selesai<br>
+💰 Income: +${state.incomeToday.toLocaleString()}<br>
+💸 Expense: -${state.expenseToday.toLocaleString()}<br>
+🦹 Maling: -${theft.toLocaleString()}<br>
+⭐ Reputasi: ${Math.floor(state.rep)}<br>
+`;
+document.getElementById("summaryArea").innerHTML=
+"<div class='summary'>"+summary+"<br><button onclick='nextDay()'>Next Day ➡</button></div>";
+}
+
+function nextDay(){
+state.day++;
+state.incomeToday=0;
+state.expenseToday=0;
+
+if(state.rep>=70 && state.tier==1){state.tier=2;}
+if(state.rep>=85 && state.tier==2){state.tier=3;}
 
 if(Math.random()<0.15){
 showCollab();
 }
+
+if(Math.random()<0.1 && !state.investor){
+state.investor={debt:300000,days:5};
+state.money+=200000;
+log("💼 Investor masuk! Harus bayar 300k dalam 5 hari.");
+}
+
+if(state.investor){
+state.investor.days--;
+if(state.investor.days<=0){
+if(state.money>=state.investor.debt){
+state.money-=state.investor.debt;
+log("💼 Investor lunas.");
+}else{
+state.rep-=30;
+log("💥 Gagal bayar investor!");
+}
+state.investor=null;
+}
+}
+
+document.getElementById("summaryArea").innerHTML="";
+update();
 }
 
 function showCollab(){
-let cost=Math.floor(Math.random()*50000)+30000;
-let gain=Math.floor(Math.random()*30)+20;
-
+let cost=50000;
+let gain=20;
 let box=document.createElement("div");
 box.className="eventBox";
-box.innerHTML=`
-🎤 Idol/Brand ingin collab!<br>
-Biaya: Rp ${cost.toLocaleString()}<br>
-Reputasi +${gain}<br><br>
-<button onclick="accept(${cost},${gain})">Terima</button>
-<button onclick="decline()">Tolak</button>
-`;
+box.innerHTML=`🎤 Collab Brand!<br>
+Biaya: 50.000<br>
+Reputasi +20<br>
+<button onclick="acceptCollab()">Terima</button>
+<button onclick="declineCollab()">Tolak</button>`;
 document.getElementById("eventArea").innerHTML="";
 document.getElementById("eventArea").appendChild(box);
 }
 
-function accept(cost,gain){
-if(state.money<cost){log("❌ Uang kurang collab");return;}
-state.money-=cost;
-state.rep+=gain;
+function acceptCollab(){
+if(state.money<50000){log("❌ Uang kurang collab");return;}
+state.money-=50000;
+state.rep+=20;
 log("🌟 Collab sukses!");
 document.getElementById("eventArea").innerHTML="";
-update();
 }
 
-function decline(){
+function declineCollab(){
 state.rep-=5;
 log("❌ Tolak collab");
 document.getElementById("eventArea").innerHTML="";
-update();
 }
 
 function restart(){
-localStorage.removeItem("amereUltimate");
+localStorage.removeItem("amereFinal");
 location.reload();
 }
 
