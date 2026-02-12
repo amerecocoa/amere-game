@@ -5,36 +5,50 @@
 <title>AMÈRE: Bitter Origins</title>
 <style>
 body{
-  background:#0e0a0a;
-  color:#f4e4d0;
-  font-family:Georgia,serif;
+  background:#0c0a0a;
+  color:#f3e6d0;
+  font-family:monospace;
   margin:0;
   padding:20px;
 }
-#game{max-width:900px;margin:auto;}
+#game{max-width:1000px;margin:auto;}
 button{
-  background:#3a1f1f;
-  color:#fff;
+  background:#3b1f1f;
+  color:white;
   border:none;
-  padding:8px 14px;
-  margin:4px;
+  padding:8px 12px;
+  margin:3px;
   cursor:pointer;
 }
-button:hover{background:#6a2e2e;}
+button:hover{background:#7a2f2f;}
 .panel{
-  border:1px solid #5c3a3a;
-  padding:15px;
+  border:1px solid #5a3a3a;
+  padding:10px;
   margin-top:10px;
 }
+.map{
+  display:grid;
+  grid-template-columns:repeat(3,80px);
+  gap:4px;
+}
+.tile{
+  width:80px;
+  height:80px;
+  background:#2b1b1b;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+.tile:hover{background:#5a2f2f;}
 .log{
   height:120px;
   overflow-y:auto;
-  background:#1a1212;
-  padding:10px;
+  background:#1a1111;
+  padding:5px;
   font-size:13px;
 }
 h1{color:#d8b27c;}
-.map button{display:block;width:200px;text-align:left;}
 </style>
 </head>
 <body>
@@ -42,7 +56,6 @@ h1{color:#d8b27c;}
 
 <h1>🍫 AMÈRE: Bitter Origins</h1>
 
-<div id="story" class="panel"></div>
 <div id="stats" class="panel"></div>
 <div id="actions" class="panel"></div>
 <div id="log" class="panel log"></div>
@@ -52,250 +65,181 @@ h1{color:#d8b27c;}
 <script>
 
 let day=1;
-let gold=120;
-let reputation=50;
-let morale=60;
-let actionsLeft=5;
-let skillPoints=0;
+let gold=150;
+let reputation=60;
+let morale=70;
+let shopLevel=1;
 
-let inventory={
-  cacao:0,
-  sugar:0,
-  fire:0
+let inventory={cacao:3,sugar:3,fire:1};
+let stock={basic:0,spicy:0};
+
+let relations={
+  elena:50, // romance
+  marcus:50 // rival
 };
 
-let stock={
-  basic:0,
-  spicy:0
-};
-
-let skills={
-  quality:0,
-  negotiation:0,
-  survival:0
-};
-
-function log(msg){
-  document.getElementById("log").innerHTML+="<div>"+msg+"</div>";
-  let box=document.getElementById("log");
-  box.scrollTop=box.scrollHeight;
+function log(t){
+ document.getElementById("log").innerHTML+="<div>"+t+"</div>";
+ let box=document.getElementById("log");
+ box.scrollTop=box.scrollHeight;
 }
 
-function updateStats(){
-  document.getElementById("stats").innerHTML=`
-  📅 Day ${day} | 🎯 Actions Left: ${actionsLeft}<br>
-  💰 Gold: ${gold} | ⭐ Reputation: ${reputation} | 🧠 Morale: ${morale}<br>
-  🍫 Cacao:${inventory.cacao} 🍬 Sugar:${inventory.sugar} 🔥 Fire:${inventory.fire}<br>
-  📦 Stock → Basic:${stock.basic} | Spicy:${stock.spicy}<br>
-  🌟 Skill Points:${skillPoints}
-  `;
+function update(){
+ document.getElementById("stats").innerHTML=`
+ Day ${day} |
+ 💰 ${gold} |
+ ⭐ ${reputation} |
+ 🧠 ${morale} |
+ 🏪 Shop Lv.${shopLevel}<br>
+ Inventory → C:${inventory.cacao} S:${inventory.sugar} F:${inventory.fire}<br>
+ Stock → Basic:${stock.basic} Spicy:${stock.spicy}<br>
+ ❤️ Elena:${relations.elena} ⚔ Marcus:${relations.marcus}
+ `;
 }
 
-function intro(){
-  document.getElementById("story").innerHTML=`
-  <p>Kota Valdore mulai melupakan AMÈRE.  
-  Kompetitor semakin kuat.  
-  Kamu punya 15 hari untuk membuktikan diri.</p>
-  <button onclick="mainMenu()">Mulai</button>
-  `;
-}
-
-function useAction(){
-  actionsLeft--;
-  if(actionsLeft<=0){
-    endDay();
-  }
-}
-
-function mainMenu(){
-  updateStats();
-  document.getElementById("actions").innerHTML=`
-  <button onclick="showMap()">🗺 Eksplorasi</button>
-  <button onclick="craft()">🍫 Craft</button>
-  <button onclick="serveCustomer()">👤 Layani Pelanggan</button>
-  <button onclick="showSkill()">🌳 Skill Tree</button>
-  `;
+function main(){
+ update();
+ document.getElementById("actions").innerHTML=`
+ <button onclick="showMap()">🗺 Map</button>
+ <button onclick="craft()">🍫 Craft</button>
+ <button onclick="serve()">👤 Customer</button>
+ <button onclick="market()">🛒 Market</button>
+ <button onclick="upgradeShop()">🏪 Upgrade Shop</button>
+ <button onclick="nextDay()">🌙 End Day</button>
+ `;
 }
 
 function showMap(){
-  document.getElementById("actions").innerHTML=`
-  <div class="map">
-  <b>Pilih Lokasi:</b><br>
-  <button onclick="explore('forest')">🌲 Hutan Aurovine</button>
-  <button onclick="explore('mountain')">🔥 Gunung Emberfall</button>
-  <button onclick="mainMenu()">⬅ Kembali</button>
-  </div>
-  `;
+ document.getElementById("actions").innerHTML=`
+ <div class="map">
+ <div class="tile" onclick="explore('forest')">🌲</div>
+ <div class="tile" onclick="explore('mountain')">🔥</div>
+ <div class="tile" onclick="explore('dock')">⚓</div>
+ </div>
+ <button onclick="main()">⬅</button>
+ `;
 }
 
 function explore(place){
-  if(place=="forest"){
-    inventory.cacao++;
-    inventory.sugar++;
-    log("Menemukan kakao & gula liar.");
-  }
-  if(place=="mountain"){
-    inventory.fire++;
-    morale-=5;
-    log("Mendapat Fire Essence tapi melelahkan.");
-  }
-  if(Math.random()>0.8){
-    morale-=10;
-    log("⚔️ Diserang makhluk liar! Morale turun.");
-  }
-  useAction();
-  updateStats();
-  mainMenu();
+ if(place=="forest"){
+  inventory.cacao+=2;
+  inventory.sugar+=1;
+  log("Menemukan bahan liar.");
+ }
+ if(place=="mountain"){
+  inventory.fire++;
+  morale-=5;
+  log("Ambil Fire Essence.");
+ }
+ if(place=="dock"){
+  gold+=20;
+  log("Kerja sampingan di pelabuhan.");
+ }
+ update();
 }
 
 function craft(){
-  if(inventory.cacao>=1 && inventory.sugar>=1){
-    inventory.cacao--;
-    inventory.sugar--;
-    stock.basic++;
-    reputation+=3+skills.quality;
-    log("Membuat Basic Truffle.");
-  }
-  if(inventory.cacao>=1 && inventory.fire>=1){
-    inventory.cacao--;
-    inventory.fire--;
-    stock.spicy++;
-    reputation+=5+skills.quality;
-    log("Membuat Spicy Ember.");
-  }
-  useAction();
-  updateStats();
-  mainMenu();
+ if(inventory.cacao>=1 && inventory.sugar>=1){
+  inventory.cacao--; inventory.sugar--;
+  stock.basic++;
+  reputation+=2;
+  log("Basic dibuat.");
+ }
+ if(inventory.cacao>=1 && inventory.fire>=1){
+  inventory.cacao--; inventory.fire--;
+  stock.spicy++;
+  reputation+=4;
+  log("Spicy dibuat.");
+ }
+ update();
 }
 
-function serveCustomer(){
-  let type=Math.random();
-  document.getElementById("actions").innerHTML="";
-
-  if(type<0.5){
-    document.getElementById("actions").innerHTML=`
-    <p>Pelanggan sedih datang. Mau?</p>
-    <button onclick="sellBasic()">Jual Basic</button>
-    <button onclick="encourage()">Beri motivasi (tanpa jual)</button>
-    `;
-  }else{
-    document.getElementById("actions").innerHTML=`
-    <p>Pelanggan kaya ingin coklat pedas eksklusif.</p>
-    <button onclick="sellSpicy()">Jual Spicy</button>
-    <button onclick="raisePrice()">Naikkan harga</button>
-    `;
-  }
-}
-
-function sellBasic(){
+function serve(){
+ let r=Math.random();
+ if(r<0.4){
   if(stock.basic>0){
-    stock.basic--;
-    gold+=25+skills.negotiation;
-    morale+=5;
-    log("Basic terjual.");
-  }else{
-    log("Stock kosong.");
+   stock.basic--;
+   gold+=30;
+   relations.elena+=5;
+   log("Elena datang. Kamu ramah.");
   }
-  useAction();
-  mainMenu();
-}
-
-function encourage(){
-  morale+=10;
-  reputation+=5;
-  log("Kamu membantu tanpa jual. Reputasi naik.");
-  useAction();
-  mainMenu();
-}
-
-function sellSpicy(){
+ }
+ else if(r<0.8){
   if(stock.spicy>0){
-    stock.spicy--;
-    gold+=40+skills.negotiation;
-    reputation+=5;
-    log("Spicy terjual mahal.");
-  }else{
-    log("Stock kosong.");
+   stock.spicy--;
+   gold+=50;
+   relations.marcus+=3;
+   log("Marcus memata-matai tokomu.");
   }
-  useAction();
-  mainMenu();
+ }
+ else{
+  log("Tidak ada pelanggan.");
+ }
+ update();
 }
 
-function raisePrice(){
-  if(stock.spicy>0){
-    stock.spicy--;
-    if(Math.random()>0.5){
-      gold+=70;
-      reputation-=5;
-      log("Untung besar tapi reputasi turun.");
-    }else{
-      reputation-=15;
-      log("Pelanggan marah.");
-    }
-  }
-  useAction();
-  mainMenu();
+function market(){
+ document.getElementById("actions").innerHTML=`
+ Beli bahan:<br>
+ <button onclick="buy('cacao')">Cacao (20)</button>
+ <button onclick="buy('sugar')">Sugar (15)</button>
+ <button onclick="buy('fire')">Fire (35)</button>
+ <button onclick="main()">⬅</button>
+ `;
 }
 
-function showSkill(){
-  document.getElementById("actions").innerHTML=`
-  <p>Skill Tree:</p>
-  Quality (${skills.quality}) 
-  <button onclick="upgrade('quality')">Upgrade</button><br>
-  Negotiation (${skills.negotiation}) 
-  <button onclick="upgrade('negotiation')">Upgrade</button><br>
-  Survival (${skills.survival}) 
-  <button onclick="upgrade('survival')">Upgrade</button><br>
-  <button onclick="mainMenu()">⬅</button>
-  `;
+function buy(type){
+ let price={cacao:20,sugar:15,fire:35};
+ if(gold>=price[type]){
+  gold-=price[type];
+  inventory[type]++;
+  log("Membeli "+type);
+ }
+ update();
 }
 
-function upgrade(type){
-  if(skillPoints>0){
-    skills[type]++;
-    skillPoints--;
-  }
-  mainMenu();
+function upgradeShop(){
+ let cost=100*shopLevel;
+ if(gold>=cost){
+  gold-=cost;
+  shopLevel++;
+  reputation+=10;
+  log("Toko diupgrade.");
+ }
+ update();
 }
 
-function endDay(){
-  day++;
-  actionsLeft=5;
-  morale-=5;
-
-  if(day%3==0){
-    skillPoints++;
-    log("Naik level! Dapat 1 Skill Point.");
-  }
-
-  if(day>=15){
-    ending();
-    return;
-  }
-
-  checkGameOver();
-  updateStats();
-  mainMenu();
+function sabotage(){
+ if(Math.random()>0.7){
+  log("🕶 Noir Dominion sabotase tokomu!");
+  gold-=50;
+  morale-=10;
+ }
 }
 
-function checkGameOver(){
-  if(gold<=0) endGame("Bangkrut.");
-  if(reputation<=0) endGame("Reputasi hancur.");
-  if(morale<=0) endGame("Kamu menyerah.");
+function nextDay(){
+ day++;
+ morale-=3;
+ sabotage();
+ checkEnd();
+ update();
 }
 
-function ending(){
-  if(reputation>120) endGame("👑 Legendaris Chocolatier.");
-  else if(gold>400) endGame("💰 Konglomerat coklat.");
-  else endGame("AMÈRE bertahan... tapi belum bersinar.");
+function checkEnd(){
+ if(gold<=0) end("Bangkrut.");
+ if(reputation>=200) end("👑 AMÈRE Legendaris!");
+ if(relations.elena>=100) end("❤️ Kamu memilih cinta.");
+ if(relations.marcus>=120) end("⚔ Marcus menghancurkan reputasimu.");
+ if(morale<=0) end("Kamu menyerah.");
 }
 
-function endGame(msg){
-  document.getElementById("actions").innerHTML="";
-  document.getElementById("story").innerHTML="<h2>GAME OVER</h2><p>"+msg+"</p><button onclick='location.reload()'>Main Lagi</button>";
+function end(msg){
+ document.getElementById("actions").innerHTML="";
+ document.getElementById("stats").innerHTML="";
+ document.getElementById("log").innerHTML="<h2>GAME OVER</h2>"+msg+"<br><button onclick='location.reload()'>Main Lagi</button>";
 }
 
-intro();
+main();
 
 </script>
 </body>
